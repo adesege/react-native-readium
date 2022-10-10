@@ -36,7 +36,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
           <Text>Table of Contents</Text>
           {items.map((item, idx) => (
             <ListItem
-              key={item.href}
+              key={`${item.href}-${item.title}-${idx}`}
               onPress={() => {
                 if (onPress) {
                   onPress(item);
@@ -50,7 +50,7 @@ export const TableOfContents: React.FC<TableOfContentsProps> = ({
                   {item.title ? item.title : `Chapter ${idx + 1}`}
                 </ListItem.Title>
               </ListItem.Content>
-              <ListItem.Chevron/>
+              <ListItem.Chevron />
             </ListItem>
           ))}
         </ScrollView>

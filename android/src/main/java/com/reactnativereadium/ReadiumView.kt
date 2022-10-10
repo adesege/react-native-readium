@@ -17,12 +17,12 @@ import org.readium.r2.shared.publication.Locator
 class ReadiumView(
   val reactContext: ThemedReactContext
 ) : FrameLayout(reactContext) {
-  var dimensions: Dimensions = Dimensions(0,0)
+  var dimensions: Dimensions = Dimensions(0, 0)
   var file: File? = null
   var fragment: BaseReaderFragment? = null
   var isViewInitialized: Boolean = false
 
-  fun updateLocation(locator: Locator) : Boolean {
+  fun updateLocation(locator: Locator): Boolean {
     if (fragment == null) {
       return false
     } else {
@@ -90,7 +90,8 @@ class ReadiumView(
     val height = dimensions.height
     this.measure(
       MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY),
-      MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY))
+      MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY)
+    )
     this.layout(0, 0, width, height)
   }
 }

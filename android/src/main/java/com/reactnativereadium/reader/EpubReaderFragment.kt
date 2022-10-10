@@ -40,10 +40,6 @@ class EpubReaderFragment : VisualReaderFragment(), EpubNavigatorFragment.Listene
     private lateinit var factory: ReaderViewModel.Factory
     private var initialSettingsMap: Map<String, Any>? = null
 
-    private lateinit var menuScreenReader: MenuItem
-    private lateinit var menuSearch: MenuItem
-    lateinit var menuSearchView: SearchView
-
     private lateinit var userSettings: UserSettings
     private var isScreenReaderVisible = false
     private var isSearchViewIconified = true

@@ -60,10 +60,7 @@ const Reader: React.FC = () => {
           <TableOfContents
             items={toc}
             onPress={(link) => {
-              setLocation({
-                href: link.href,
-                type: 'application/xhtml+xml',
-              });
+              setLocation(link);
             }}
           />
           <ReaderSettings

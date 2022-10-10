@@ -6,26 +6,22 @@
 
 package com.reactnativereadium.reader
 
+import android.graphics.PointF
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowInsets
-import android.widget.FrameLayout
 import androidx.fragment.app.Fragment
-import org.readium.r2.navigator.DecorableNavigator
-import org.readium.r2.navigator.ExperimentalDecorator
-import com.reactnativereadium.R
 import com.reactnativereadium.databinding.FragmentReaderBinding
-import com.reactnativereadium.utils.clearPadding
-import com.reactnativereadium.utils.hideSystemUi
-import com.reactnativereadium.utils.padSystemUi
-import com.reactnativereadium.utils.showSystemUi
+import com.reactnativereadium.utils.*
+import org.readium.r2.navigator.VisualNavigator
+import org.readium.r2.navigator.util.EdgeTapNavigation
 
 /*
  * Adds fullscreen support to the BaseReaderFragment
  */
-abstract class VisualReaderFragment : BaseReaderFragment() {
+abstract class VisualReaderFragment : BaseReaderFragment(), VisualNavigator.Listener {
 
     private lateinit var navigatorFragment: Fragment
 
@@ -33,46 +29,60 @@ abstract class VisualReaderFragment : BaseReaderFragment() {
     val binding get() = _binding!!
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
+      inflater: LayoutInflater,
+      container: ViewGroup?,
+      savedInstanceState: Bundle?
     ): View? {
-        _binding = FragmentReaderBinding.inflate(inflater, container, false)
-        return binding.root
+      _binding = FragmentReaderBinding.inflate(inflater, container, false)
+      return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        navigatorFragment = navigator as Fragment
+      super.onViewCreated(view, savedInstanceState)
+      navigatorFragment = navigator as Fragment
 
-        childFragmentManager.addOnBackStackChangedListener {
-            updateSystemUiVisibility()
-        }
-        binding.fragmentReaderContainer.setOnApplyWindowInsetsListener { container, insets ->
-            updateSystemUiPadding(container, insets)
-            insets
-        }
+      childFragmentManager.addOnBackStackChangedListener {
+        updateSystemUiVisibility()
+      }
+      binding.fragmentReaderContainer.setOnApplyWindowInsetsListener { container, insets ->
+        updateSystemUiPadding(container, insets)
+        insets
+      }
     }
 
     override fun onDestroyView() {
-        _binding = null
-        super.onDestroyView()
+      _binding = null
+      super.onDestroyView()
     }
 
     fun updateSystemUiVisibility() {
-        if (navigatorFragment.isHidden)
-            requireActivity().showSystemUi()
-        else
-            requireActivity().hideSystemUi()
+      if (navigatorFragment.isHidden)
+        requireActivity().showSystemUi()
+      else
+        requireActivity().hideSystemUi()
 
-        requireView().requestApplyInsets()
+      requireView().requestApplyInsets()
     }
 
     private fun updateSystemUiPadding(container: View, insets: WindowInsets) {
-        if (navigatorFragment.isHidden) {
-            container.padSystemUi(insets, requireActivity())
-        } else {
-            container.clearPadding()
-        }
+      if (navigatorFragment.isHidden) {
+        container.padSystemUi(insets, requireActivity())
+      } else {
+        container.clearPadding()
+      }
+    }
+
+    override fun onTap(point: PointF): Boolean {
+      val navigated = edgeTapNavigation.onTap(point, requireView())
+      if (!navigated) {
+        requireActivity().toggleSystemUi()
+      }
+      return true
+    }
+
+    private val edgeTapNavigation by lazy {
+      EdgeTapNavigation(
+        navigator = navigator as VisualNavigator
+      )
     }
 }

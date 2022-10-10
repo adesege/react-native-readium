@@ -4,26 +4,32 @@ import android.annotation.SuppressLint
 import androidx.lifecycle.ViewModelStore
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.util.RNLog
+import org.readium.r2.shared.Injectable
+import org.readium.r2.shared.extensions.mediaType
+import org.readium.r2.shared.extensions.tryOrNull
+import org.readium.r2.shared.publication.Locator
+import org.readium.r2.shared.publication.Publication
+import org.readium.r2.shared.publication.asset.FileAsset
+import org.readium.r2.shared.publication.services.isRestricted
+import org.readium.r2.shared.publication.services.protectionError
+import org.readium.r2.streamer.Streamer
+import org.readium.r2.streamer.server.Server
 import java.io.File
 import java.io.IOException
 import java.net.ServerSocket
 import java.net.URL
-import org.readium.r2.shared.extensions.mediaType
-import org.readium.r2.shared.extensions.tryOrNull
-import org.readium.r2.shared.Injectable
-import org.readium.r2.shared.publication.Locator
-import org.readium.r2.shared.publication.asset.FileAsset
-import org.readium.r2.shared.publication.Publication
-import org.readium.r2.streamer.server.Server
-import org.readium.r2.streamer.Streamer
 
 
 class ReaderService(
   private val reactContext: ReactApplicationContext
 ) {
+  object CancellationException : Exception()
+
   private var streamer = Streamer(reactContext)
+
   // see R2App.onCreate
   private var server: Server
+
   // val channel = EventChannel(Channel<Event>(Channel.BUFFERED), viewModelScope)
   private var store = ViewModelStore()
 
@@ -59,12 +65,18 @@ class ReaderService(
       allowUserInteraction = false,
       sender = reactContext
     )
-      .onSuccess {
+      .onSuccess { it ->
+        if (it.isRestricted) {
+          throw it.protectionError
+            ?: CancellationException
+        }
+
         val url = prepareToServe(it)
         if (url != null) {
-          val readerFragment = EpubReaderFragment.newInstance(url)
-          readerFragment.initFactory(it, initialLocation)
-          callback.invoke(readerFragment)
+
+          createReaderFragment(url, it, initialLocation)?.let {
+            callback.invoke(it)
+          }
         }
       }
       .onFailure {
@@ -72,6 +84,28 @@ class ReaderService(
         RNLog.w(reactContext, "Error executing ReaderService.openPublication")
         // TODO: implement failure event
       }
+  }
+
+  private fun createReaderFragment(
+    baseURL: URL,
+    publication: Publication,
+    initialLocation: Locator?
+  ): BaseReaderFragment? {
+    return when {
+      publication.conformsTo(Publication.Profile.EPUB) -> {
+        val readerFragment = EpubReaderFragment.newInstance(baseURL);
+        readerFragment.initFactory(publication, initialLocation)
+        return readerFragment
+      }
+      publication.conformsTo(Publication.Profile.PDF) -> {
+        val readerFragment = PdfReaderFragment.newInstance();
+        readerFragment.initFactory(publication, initialLocation)
+        return readerFragment
+      }
+      else ->
+        // The Activity should stop as soon as possible because readerData are fake.
+        null
+    }
   }
 
   private fun prepareToServe(publication: Publication): URL? {
